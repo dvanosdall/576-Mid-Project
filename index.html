@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Hello, world!</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="" />
+
+    <!-- ArcGIS apis and css file js library -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <!-- modules for the the full screen map -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            require(["esri/config",
+                "esri/Map",
+                "esri/views/MapView",
+                "esri/widgets/BasemapGallery",
+                "esri/widgets/Expand",
+                "esri/widgets/Locate",
+                "esri/widgets/Search"
+            ], function (
+                esriConfig,
+                Map,
+                MapView,
+                BasemapGallery,
+                Expand,
+                Locate,
+                Search
+            ) {
+                esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurA7KuWFcKWHkeJGoN8LUQ0kg89t8Mp9cvPVKOEIlsdPNLfXn5b7CCVz-TOsYcUlMoSeMzi8wk5dok7tlJEH1AT1D08Fi4R08Yc-PqHpmdRfewyDZ3eKIjCxRy2ypQ7t_XLIUEo5TrWCxuzoL-CiULHI9PILuzJZ9AY1270cOvy30f3K9Jl_RnHOWwK1AQpkEKmKK3fbIhSplvXWfswyP60ZOP7jizaZoFHiwlIPf7-kQAT1_oy0SXwjE";
+                const map = new Map({
+                    // Basemap layer - city names
+                    basemap: "arcgis-newspaper"
+                });
+
+                const view = new MapView({
+                    map: map,
+                    // Longitude, latitude for Liverpool UK
+                    center: [-2.9779, 53.4084],
+                    // Div element
+                    container: "viewDiv",
+                    // Detailed view
+                    scale: 25000
+                });
+
+                // Create BasemapGallery widget
+                const basemapGallery = new BasemapGallery({
+                    view: view
+                });
+
+                // Optionally wrap in Expand widget to toggle visibility
+                const bgExpand = new Expand({
+                    view: view,
+                    content: basemapGallery,
+                    expandIconClass: "esri-icon-basemap",
+                    group: "top-right"
+                });
+
+                // Add the expand widget with the basemap gallery to the UI
+                view.ui.add(bgExpand, {
+                    position: "top-right"
+                });
+
+                // Locate widget: adds button to center map on user location
+                const locateWidget = new Locate({
+                    view: view,
+                    useHeadingEnabled: false,
+                    goToOverride: (view, options) => {
+                        // Zoom in when centering
+                        options.target.scale = 1500;
+                        return view.goTo(options.target);
+                    }
+                });
+                view.ui.add(locateWidget, "top-left");
+
+                // Search widget
+                const searchWidget = new Search({
+                    view: view,
+                    popupEnabled: true,
+                });
+                view.ui.add(searchWidget, {
+                    position: "top-left",
+                    index: 1
+                });
+            });
+        });
+    </script>
+
+    <!-- style -->
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- div for map display -->
+    <div id="viewDiv"></div>
+</body>
+
+</html>
