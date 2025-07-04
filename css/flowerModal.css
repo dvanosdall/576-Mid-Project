@@ -1,0 +1,95 @@
+/* Modal background */
+.modal {
+  display: none; /* hidden by default */
+  position: fixed;
+  z-index: 1000; /* match walk modal z-index */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5); /* same opacity as walk modal */
+}
+
+/* Modal content box */
+.modal-content {
+  background-color: #ffffff;
+  margin: 10% auto;      /* centers horizontally */
+  padding: 20px 40px 20px 30px;  /* keep some right padding */
+  border-radius: 10px;
+  width: 90%;            /* responsive width, fits smaller screens */
+  max-width: 400px;      /* max width to avoid very wide modal */
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  box-sizing: border-box; /* include padding inside width */
+  overflow-wrap: break-word;
+}
+
+/* Close button */
+.modal .close {
+  position: absolute;
+  right: 20px;   /* increased from 15px */
+  top: 20px;     /* increased from 15px */
+  font-size: 28px;
+  font-weight: bold;
+  color: #666666;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  user-select: none;
+  z-index: 1100; /* make sure it's above everything */
+}
+
+.modal .close:hover {
+  color: #333333;
+}
+
+/* Labels */
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 15px;
+  margin-bottom: 6px;
+  color: #000000;
+}
+
+/* Inputs and textarea */
+input[type="url"],
+textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Buttons styled like walk modal buttons */
+.modal-content button {
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 10px 8px 0 0;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  min-width: 90px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color 0.3s ease;
+  background-color: #003366; /* dark blue like closeWalkBtn */
+}
+
+.modal-content button:hover {
+  background-color: #001f4d;
+}
+
+/* If you want a green save button like the start walk, add a class and style */
+/* Example: <button id="submitFlowerBtn" class="btn-green">Save Flower</button> */
+.btn-green {
+  background-color: #4CAF50;
+}
+
+.btn-green:hover {
+  background-color: #388E3C;
+}

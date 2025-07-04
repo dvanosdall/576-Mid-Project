@@ -1,0 +1,186 @@
+html, body, #viewDiv {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.btn {
+  position: absolute;
+  z-index: 10;
+  top: 10px;
+  background-color: #4CAF50; /* green */
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #388E3C; /* darker green */
+}
+
+#startWalkBtn {
+  left: 10px;
+  bottom: 16px;
+  top: auto;
+  right: auto;
+}
+
+#addFlowerBtn {
+  right: 10px;
+  bottom: 16px;
+  top: auto;
+  left: auto;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 20;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal input,
+.modal textarea {
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+}
+
+.modal button {
+  padding: 8px 16px;
+  margin-right: 10px;
+}
+
+/* Override Esri widget buttons to match .btn */
+.esri-widget-button,
+.esri-widget--button {
+  background-color: #4CAF50 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-size: 14px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.esri-widget-button:hover,
+.esri-widget--button:hover {
+  background-color: #388E3C !important;
+}
+
+.esri-ui-top-left .esri-component,
+.esri-ui-top-right .esri-component {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Outer button: background and shape */
+.esri-widget-button[title="My location"],
+.esri-widget--button[title="My location"] {
+  background-color: #4CAF50 !important; /* green background */
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 8px !important;
+  box-shadow: none !important;
+}
+
+/* Hover state for Locate */
+.esri-widget-button[title="My location"]:hover,
+.esri-widget--button[title="My location"]:hover {
+  background-color: #388E3C !important; /* darker green on hover */
+}
+
+/* Inner icon (the "target" symbol) */
+.esri-icon-locate {
+  color: white !important;     /* makes the icon itself white */
+  font-size: 18px !important;  /* slightly bigger if needed */
+}
+
+/* Optional: remove Locate widget ring glow/focus outline */
+.esri-widget--button:focus {
+  outline: none !important;
+}
+
+/* banner for walk status */
+#walkStatusBanner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  background-color: #4CAF50; /* default green */
+  color: white;
+  padding: 6px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  white-space: nowrap;
+  transition: background-color 0.3s ease;
+}
+
+#walkStatusBanner.active {
+  background-color: #4CAF50; /* green */
+}
+
+#walkStatusBanner.not-active {
+  background-color: #8B0000; /* dark red */
+  color: white;
+}
+
+.btn.not-active {
+  background-color: #8B0000; /* Dark red */
+}
+
+.btn.not-active:hover {
+  background-color: #5A0000; /* Darker red on hover */
+}
+
+.btn.disabled {
+  background-color: #888888;  /* grey */
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Enabled save button style */
+/* Save Notes Button States */
+.save-notes-btn-enabled {
+  opacity: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.save-notes-btn-disabled {
+  opacity: 0.6;
+  cursor: default;
+  pointer-events: none;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

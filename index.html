@@ -1,111 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <title>Hello, world!</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="description" content="" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Flower Recall App</title>
 
-    <!-- ArcGIS apis and css file js library -->
-    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css">
-    <script src="https://js.arcgis.com/4.25/"></script>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.26/"></script>
 
-    <!-- modules for the the full screen map -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            require(["esri/config",
-                "esri/Map",
-                "esri/views/MapView",
-                "esri/widgets/BasemapGallery",
-                "esri/widgets/Expand",
-                "esri/widgets/Locate",
-                "esri/widgets/Search"
-            ], function (
-                esriConfig,
-                Map,
-                MapView,
-                BasemapGallery,
-                Expand,
-                Locate,
-                Search
-            ) {
-                esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurA7KuWFcKWHkeJGoN8LUQ0kg89t8Mp9cvPVKOEIlsdPNLfXn5b7CCVz-TOsYcUlMoSeMzi8wk5dok7tlJEH1AT1D08Fi4R08Yc-PqHpmdRfewyDZ3eKIjCxRy2ypQ7t_XLIUEo5TrWCxuzoL-CiULHI9PILuzJZ9AY1270cOvy30f3K9Jl_RnHOWwK1AQpkEKmKK3fbIhSplvXWfswyP60ZOP7jizaZoFHiwlIPf7-kQAT1_oy0SXwjE";
-                const map = new Map({
-                    // Basemap layer - city names
-                    basemap: "arcgis-newspaper"
-                });
+    <!-- styles -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/walkModal.css" />
+    <link rel="stylesheet" href="css/flowerModal.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
 
-                const view = new MapView({
-                    map: map,
-                    // Longitude, latitude for Liverpool UK
-                    center: [-2.9779, 53.4084],
-                    // Div element
-                    container: "viewDiv",
-                    // Detailed view
-                    scale: 25000
-                });
-
-                // Create BasemapGallery widget
-                const basemapGallery = new BasemapGallery({
-                    view: view
-                });
-
-                // Optionally wrap in Expand widget to toggle visibility
-                const bgExpand = new Expand({
-                    view: view,
-                    content: basemapGallery,
-                    expandIconClass: "esri-icon-basemap",
-                    group: "top-right"
-                });
-
-                // Add the expand widget with the basemap gallery to the UI
-                view.ui.add(bgExpand, {
-                    position: "top-right"
-                });
-
-                // Locate widget: adds button to center map on user location
-                const locateWidget = new Locate({
-                    view: view,
-                    useHeadingEnabled: false,
-                    goToOverride: (view, options) => {
-                        // Zoom in when centering
-                        options.target.scale = 1500;
-                        return view.goTo(options.target);
-                    }
-                });
-                view.ui.add(locateWidget, "top-left");
-
-                // Search widget
-                const searchWidget = new Search({
-                    view: view,
-                    popupEnabled: true,
-                });
-                view.ui.add(searchWidget, {
-                    position: "top-left",
-                    index: 1
-                });
-            });
-        });
-    </script>
-
-    <!-- style -->
-    <style>
-        html,
-        body,
-        #viewDiv {
-            padding: 0;
-            margin: 0;
-            height: 100%;
-            width: 100%;
-        }
-    </style>
-
+    <!-- scripts -->
+    <script type="module" src="js/main.js"></script>
 </head>
 
 <body>
-    <!-- div for map display -->
-    <div id="viewDiv"></div>
+    <div id="viewDiv">
+
+        <div id="walkStatusBanner">No Active Walk</div>
+
+        <div id="status"></div>
+        <!-- Action buttons -->
+        <button id="startWalkBtn" class="btn">Start/End Walk</button>
+        <button id="addFlowerBtn" class="btn">Add Flower</button>
+
+        <!-- Walk Modal -->
+        <div id="walkModal" class="modal">
+            <div class="modal-content">
+                <div class="walk-status-line">
+                    <strong class="walk-status-label">Walk Status:</strong>
+                    <span id="walkStatus" class="not-started">Not Started</span>
+                </div>
+
+                <div id="walkStartTimeContainer" style="display: none; text-align: center; margin-bottom: 12px;">
+                    <strong>Started:</strong> <span id="walkStartTime"></span>
+                </div>
+
+                <div id="walkNotesContainer" style="display: none; margin-bottom: 16px;">
+                    <label for="walkNotes" style="font-weight: 600;">Walk Notes:</label>
+                    <textarea id="walkNotes" rows="3" placeholder="Enter notes during your walk..."></textarea>
+                    <button id="saveWalkNotesBtn" style="display:none;">Save Notes</button>
+                </div>
+
+                <hr class="modal-separator" />
+
+                <div class="walk-button-row">
+                    <div class="walk-buttons-left">
+                        <button id="startWalkBtnModal">Start Walk</button>
+                        <button id="endWalkBtnModal" style="display:none;">End Walk</button>
+                    </div>
+                    <div class="walk-button-right">
+                        <button id="closeWalkBtnModal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flower Modal -->
+        <div id="flowerModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Flower</h2>
+
+                <label for="photoInput">Photo:</label>
+                <input type="url" id="photoInput" placeholder="https://example.com/image.jpg" />
+
+                <label for="notesInput">Notes:</label>
+                <textarea id="notesInput" rows="4" placeholder="Optional notes..."></textarea>
+
+                <button id="submitFlowerBtn">Save Flower</button>
+            </div>
+        </div>
 </body>
 
 </html>
