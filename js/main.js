@@ -57,6 +57,15 @@ document.addEventListener("DOMContentLoaded", function () {
             zoom: 20
         });
 
+        view.popup.dockEnabled = true;
+        view.popup.dockOptions = {
+            buttonEnabled: true,
+            breakpoint: false,
+            position: "bottom"
+        };
+
+        view.popup.viewModel.maxHeight = 300;
+
         async function panToUserLocation() {
             if (!navigator.geolocation) {
                 console.warn("Geolocation not supported by this browser.");
