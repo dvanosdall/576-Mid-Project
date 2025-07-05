@@ -210,13 +210,32 @@ html, body, #viewDiv {
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 16px;
-  height: auto;          /* allow height to be based on content */
-  max-height: 30px;      /* limit max height */
-  width: auto;           /* width adjusts to content */
-  max-width: 200px;      /* limit max width */
-  line-height: normal;   /* normal line height */
-  display: inline-block; /* keep it sized to content */
-  white-space: nowrap;   /* prevent wrapping */
+  height: auto;
+  max-height: 30px;
+  width: auto;
+  max-width: 200px;
+  line-height: normal;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.popup-table th {
+  text-align: right;
+  vertical-align: top;
+  width: 35%;
+  padding: 6px 10px 6px 2;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.popup-table td {
+  padding: 6px 6px 6px 12px; /* more left padding here */
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-family: monospace;
+  white-space: normal;
 }
 
 

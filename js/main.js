@@ -57,14 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
             zoom: 20
         });
 
-        view.popup.dockEnabled = true;
-        view.popup.dockOptions = {
-            buttonEnabled: true,
-            breakpoint: false,
-            position: "bottom"
-        };
-
-        view.popup.viewModel.maxHeight = 300;
+        view.popupEnabled = false;
 
         async function panToUserLocation() {
             if (!navigator.geolocation) {
@@ -122,27 +115,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 size: 8,
                 outline: { color: "black", width: 1 }
             }
-        };
-        flowerLayer.popupTemplate = {
-            title: "Flower Details",
-            content: [
-                {
-                    type: "fields",
-                    fieldInfos: [
-                        { fieldName: "Notes", label: "Notes" },
-                        {
-                            fieldName: "Timestamp",
-                            label: "Timestamp",
-                            format: { dateFormat: "short-date-short-time" }
-                        },
-                        {
-                            fieldName: "PhotoURL",
-                            label: "Photo",
-                            visible: true
-                        }
-                    ]
-                }
-            ]
         };
         map.add(flowerLayer);
 
@@ -260,6 +232,10 @@ document.addEventListener("DOMContentLoaded", function () {
         // Expose it globally if you want to call it from outside
         window.drawWalkLineForCurrentWalk = drawWalkLineForCurrentWalk;
 
+        document.getElementById("closeFlowerDetailModal").addEventListener("click", () => {
+            document.getElementById("flowerDetailModal").style.display = "none";
+        });
+        
         notesEl = document.getElementById("walkNotes");
         saveNotesBtn = document.getElementById("saveWalkNotesBtn");
 
@@ -453,21 +429,38 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("flowerModal").style.display = "block";
                 console.log("Selected flower location:", window.selectedPoint.longitude, window.selectedPoint.latitude);
 
-                // Close popup while selecting flower location
+                // Close default popup
                 view.popup.close();
                 return;
             }
 
             try {
-                // Limit hitTest to flowerLayer only for performance and accuracy
+                // Limit hitTest to flowerLayer only
                 const response = await view.hitTest(event, { include: flowerLayer });
-                if (response.results.length > 0) {
-                    const graphic = response.results[0].graphic;
-                    view.popup.open({
-                        location: event.mapPoint,
-                        features: [graphic]
-                    });
+                const flowerResult = response.results.find(r => r.graphic?.layer === flowerLayer);
+
+                if (flowerResult) {
+                    const attr = flowerResult.graphic.attributes;
+
+                    // Fill in modal content
+                    document.getElementById("flowerNotes").textContent = attr.Notes || "None";
+                    document.getElementById("flowerTimestamp").textContent = attr.Timestamp
+                        ? new Date(attr.Timestamp).toLocaleString()
+                        : "Unknown";
+
+                    const linkEl = document.getElementById("flowerPhotoLink");
+                    if (attr.PhotoURL) {
+                        linkEl.innerHTML = `<a href="${attr.PhotoURL}" target="_blank">View Photo</a>`;
+                    } else {
+                        linkEl.textContent = "No photo available";
+                    }
+
+                    // Show your custom modal
+                    document.getElementById("flowerDetailModal").style.display = "block";
+
                 } else {
+                    // Nothing clicked, close modal/popup if open
+                    document.getElementById("flowerDetailModal").style.display = "none";
                     view.popup.close();
                 }
             } catch (error) {
