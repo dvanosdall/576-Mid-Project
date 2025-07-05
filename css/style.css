@@ -184,3 +184,39 @@ html, body, #viewDiv {
   opacity: 0.5;
   pointer-events: none;
 }
+
+#allWalksModal .modal-content {
+    max-height: 70vh;
+    overflow-y: auto;
+    width: 90%;
+    max-width: 600px;
+    margin: auto;
+}
+
+/* Close - dark blue */
+#showAllWalksBtn {
+  background-color: #003366;
+}
+#showAllWalksBtn:hover {
+  background-color: #001f4d;
+}
+
+#showAllWalksBtn {
+  position: fixed;
+  bottom: 20px;
+  left: 80%;
+  z-index: 1000;
+  background-color: #003366;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  height: auto;          /* allow height to be based on content */
+  max-height: 30px;      /* limit max height */
+  width: auto;           /* width adjusts to content */
+  max-width: 200px;      /* limit max width */
+  line-height: normal;   /* normal line height */
+  display: inline-block; /* keep it sized to content */
+  white-space: nowrap;   /* prevent wrapping */
+}
+
+

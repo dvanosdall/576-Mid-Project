@@ -57,28 +57,34 @@ document.addEventListener("DOMContentLoaded", function () {
             zoom: 20
         });
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userCoords = {
-                        longitude: position.coords.longitude,
-                        latitude: position.coords.latitude
-                    };
-                    console.log("Panning map to user location:", userCoords);
-                    view.goTo({
-                        center: [userCoords.longitude, userCoords.latitude],
-                        zoom: 20
-                    });
-                },
-                (error) => {
-                    console.warn("Geolocation failed or permission denied, using default location.");
-                },
-                { timeout: 10000 }
-            );
-        } else {
-            console.warn("Geolocation not supported by this browser.");
-            // No geolocation, stay at default center
+        async function panToUserLocation() {
+            if (!navigator.geolocation) {
+                console.warn("Geolocation not supported by this browser.");
+                return;
+            }
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+                });
+
+                const userCoords = {
+                    longitude: position.coords.longitude,
+                    latitude: position.coords.latitude
+                };
+                console.log("Panning map to user location:", userCoords);
+
+                await view.goTo({
+                    center: [userCoords.longitude, userCoords.latitude],
+                    zoom: 20
+                });
+
+            } catch (error) {
+                console.warn("Geolocation failed or permission denied, using default location.", error);
+            }
         }
+
+        panToUserLocation();
 
         // Expose Graphic globally
         window.__Graphic = Graphic;
@@ -457,6 +463,211 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             } catch (error) {
                 console.error("Error during hitTest:", error);
+            }
+        });
+
+        // Grab new modal and buttons
+        const allWalksModal = document.getElementById("allWalksModal");
+        const walksList = document.getElementById("walksList");
+        const showAllWalksBtn = document.getElementById("showAllWalksBtn");
+        const exportWalksBtn = document.getElementById("exportWalksBtn");
+        const closeAllWalksBtn = document.getElementById("closeAllWalksBtn");
+
+        showAllWalksBtn.addEventListener("click", async () => {
+            if (!walksLayer || !flowerLayer) {
+                alert("Layers not loaded yet.");
+                return;
+            }
+
+            walksLayer.visible = false;
+            walksList.innerHTML = "";
+
+            try {
+                const walksQuery = walksLayer.createQuery();
+                walksQuery.where = "EndTime IS NOT NULL";
+                walksQuery.returnGeometry = false;
+                walksQuery.outFields = ["OBJECTID", "StartTime", "EndTime", "UserNotes"];
+                walksQuery.orderByFields = ["StartTime DESC"];
+                const walksResult = await walksLayer.queryFeatures(walksQuery);
+
+                if (walksResult.features.length === 0) {
+                    walksList.textContent = "No completed walks found.";
+                    return;
+                }
+
+                for (const walkFeature of walksResult.features) {
+                    const walkAttr = walkFeature.attributes;
+                    const walkId = walkAttr.ObjectId;
+                    const start = walkAttr.StartTime ? new Date(walkAttr.StartTime).toLocaleString() : "Unknown start";
+                    const end = walkAttr.EndTime ? new Date(walkAttr.EndTime).toLocaleString() : "Unknown end";
+                    const notes = walkAttr.UserNotes || "";
+
+                    const walkDiv = document.createElement("div");
+                    walkDiv.style.borderBottom = "2px solid #aaa";
+                    walkDiv.style.marginBottom = "12px";
+                    walkDiv.style.paddingBottom = "8px";
+
+                    walkDiv.innerHTML = `
+        <strong>Walk ID:</strong> ${walkId}<br/>
+        <strong>Start:</strong> ${start}<br/>
+        <strong>End:</strong> ${end}<br/>
+        <strong>Notes:</strong> ${notes.length > 100 ? notes.substring(0, 100) + "..." : notes}<br/>
+        <div><strong>Flower Points:</strong></div>
+      `;
+
+                    const pointsQuery = flowerLayer.createQuery();
+                    pointsQuery.where = `WalkID = '${walkId}'`;
+                    pointsQuery.returnGeometry = true;
+                    pointsQuery.outFields = ["ObjectId", "Timestamp", "PhotoURL", "Notes"];
+                    pointsQuery.orderByFields = ["Timestamp ASC"];
+
+                    try {
+                        const pointsResult = await flowerLayer.queryFeatures(pointsQuery);
+
+                        if (pointsResult.features.length === 0) {
+                            walkDiv.innerHTML += "<em>No flower points recorded for this walk.</em>";
+                        } else {
+                            const pointsList = document.createElement("ul");
+                            pointsList.style.marginLeft = "20px";
+
+                            pointsQuery.returnGeometry = true;
+
+                            for (const pointFeature of pointsResult.features) {
+                                const pAttr = pointFeature.attributes;
+                                const geometry = pointFeature.geometry;
+                                const lat = geometry?.y?.toFixed(5) ?? "N/A";
+                                const lon = geometry?.x?.toFixed(5) ?? "N/A";
+                                const pointId = pAttr.ObjectId;
+                                const time = pAttr.Timestamp ? new Date(pAttr.Timestamp).toLocaleString() : "Unknown time";
+                                const photo = pAttr.PhotoURL ? `<a href="${pAttr.PhotoURL}" target="_blank" style="color:#1a73e8; text-decoration:none;">📷 View Photo</a>` : "No photo";
+                                const fNotes = pAttr.Notes || "";
+
+                                const truncatedNotes = fNotes.length > 80 ? fNotes.substring(0, 80) + "…" : fNotes;
+
+                                const pointItem = document.createElement("li");
+                                pointItem.style.marginBottom = "10px";
+                                pointItem.style.lineHeight = "1.4";
+
+                                pointItem.innerHTML = `
+    <div><strong>Point ID:</strong> ${pointId}</div>
+    <div><strong>Location:</strong> ${lat}, ${lon}</div>
+    <div><strong>Timestamp:</strong> ${time}</div>
+    <div>${photo}</div>
+    <div><strong>Notes:</strong> ${truncatedNotes}</div>
+  `;
+
+                                pointsList.appendChild(pointItem);
+                            }
+
+                            walkDiv.appendChild(pointsList);
+                        }
+                    } catch (err) {
+                        console.error("Flower layer query failed:", err);
+                        walkDiv.innerHTML += "<em>Error loading flower points.</em>";
+                    }
+
+                    walksList.appendChild(walkDiv);
+                }
+
+                allWalksModal.style.display = "block";
+
+            } catch (error) {
+                console.error("Error loading walks:", error);
+                alert("Error loading walks: " + error.message);
+            }
+        });
+
+        closeAllWalksBtn.addEventListener("click", () => {
+            allWalksModal.style.display = "none";
+            walksLayer.visible = true; // or false if you want to keep hidden
+        });
+
+        exportWalksBtn.addEventListener("click", async () => {
+            if (!walksLayer || !flowerLayer) {
+                alert("Layers not loaded yet.");
+                return;
+            }
+
+            try {
+                exportWalksBtn.disabled = true;
+                exportWalksBtn.textContent = "Exporting...";
+
+                // Query completed walks
+                const walksQuery = walksLayer.createQuery();
+                walksQuery.where = "EndTime IS NOT NULL";
+                walksQuery.returnGeometry = false; // no geometry on walks, but you can set true if needed
+                walksQuery.outFields = ["ObjectId", "StartTime", "EndTime", "UserNotes"];
+                walksQuery.orderByFields = ["StartTime DESC"];
+
+                const walksResult = await walksLayer.queryFeatures(walksQuery);
+
+                if (walksResult.features.length === 0) {
+                    alert("No completed walks to export.");
+                    return;
+                }
+
+                // For each walk, fetch flower points and nest them inside the walk object
+                const walksWithPoints = [];
+                for (const walkFeature of walksResult.features) {
+                    const walkAttr = walkFeature.attributes;
+                    const walkId = walkAttr.ObjectId;
+
+                    // Query flower points for this walk
+                    const pointsQuery = flowerLayer.createQuery();
+                    pointsQuery.where = `WalkID = '${walkId}'`;
+                    pointsQuery.returnGeometry = true;
+                    pointsQuery.outFields = ["ObjectId", "Timestamp", "PhotoURL", "Notes"];
+                    pointsQuery.orderByFields = ["Timestamp ASC"];
+
+                    let pointsResult;
+                    try {
+                        pointsResult = await flowerLayer.queryFeatures(pointsQuery);
+                    } catch (err) {
+                        console.error("Flower layer query failed:", err);
+                        pointsResult = { features: [] }; // fallback to empty list
+                    }
+
+                    // Prepare flower points array, include geometry if present
+                    const flowerPoints = pointsResult.features.map(pointFeature => {
+                        const pAttr = pointFeature.attributes;
+                        return {
+                            ObjectId: pAttr.ObjectId,
+                            Timestamp: pAttr.Timestamp,
+                            PhotoURL: pAttr.PhotoURL,
+                            Notes: pAttr.Notes,
+                            geometry: pointFeature.geometry
+                        };
+                    });
+
+                    // Add walk data + nested flower points
+                    walksWithPoints.push({
+                        ObjectId: walkId,
+                        StartTime: walkAttr.StartTime,
+                        EndTime: walkAttr.EndTime,
+                        UserNotes: walkAttr.UserNotes,
+                        flowerPoints: flowerPoints
+                    });
+                }
+
+                // Export the entire nested data as JSON
+                const jsonStr = JSON.stringify(walksWithPoints, null, 2);
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "walks_with_flower_points.json";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error("Error exporting walks:", error);
+                alert("Error exporting walks: " + (error.message || error));
+            } finally {
+                exportWalksBtn.disabled = false;
+                exportWalksBtn.textContent = "Export Walks";
             }
         });
 
