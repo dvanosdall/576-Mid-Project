@@ -34,13 +34,17 @@ document.addEventListener("DOMContentLoaded", function () {
         "esri/Map",
         "esri/views/MapView",
         "esri/widgets/Locate",
-        "esri/layers/FeatureLayer"
+        "esri/layers/FeatureLayer",
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer"
     ], (
         esriConfig,
         Map,
         MapView,
         Locate,
-        FeatureLayer
+        FeatureLayer,
+        Graphic,
+        GraphicsLayer
     ) => {
         esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurA7KuWFcKWHkeJGoN8LUQ0kg89t8Mp9cvPVKOEIlsdPNLfXn5b7CCVz-TOsYcUlMoSeMzi8wk5dok7tlJEH1AT1D08Fi4R08Yc-PqHpmdRfewyDZ3eKIjCxRy2ypQ7t_XLIUEo5TrWCxuzoL-CiULHI9PILuzJZ9AY1270cOvy30f3K9Jl_RnHOWwK1AQpkEKmKK3fbIhSplvXWfswyP60ZOP7jizaZoFHiwlIPf7-kQAT1_oy0SXwjE";
 
@@ -76,12 +80,23 @@ document.addEventListener("DOMContentLoaded", function () {
             // No geolocation, stay at default center
         }
 
+        // Expose Graphic globally
+        window.__Graphic = Graphic;
+
+        // Add walk line layer
+        const walkLineLayer = new GraphicsLayer();
+        window.__walkLineLayer = walkLineLayer;
+        map.add(walkLineLayer);
+
+        // Add Locate widget to the view
         const locateWidget = new Locate({ view: view });
         view.ui.add(locateWidget, "top-left");
 
+        // Add feature layers for flowers and walks
         flowerLayer = new FeatureLayer({
             url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/flower_recall_feature_layer_template/FeatureServer/0",
-            title: "FlowerRecall"
+            title: "FlowerRecall",
+            outFields: ["*"]
         });
         flowerLayer.renderer = {
             type: "simple",
@@ -92,6 +107,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 size: 8,
                 outline: { color: "black", width: 1 }
             }
+        };
+        flowerLayer.popupTemplate = {
+            title: "Flower Details",
+            content: [
+                {
+                    type: "fields",
+                    fieldInfos: [
+                        { fieldName: "Notes", label: "Notes" },
+                        {
+                            fieldName: "Timestamp",
+                            label: "Timestamp",
+                            format: { dateFormat: "short-date-short-time" }
+                        },
+                        {
+                            fieldName: "PhotoURL",
+                            label: "Photo",
+                            visible: true
+                        }
+                    ]
+                }
+            ]
         };
         map.add(flowerLayer);
 
@@ -110,6 +146,104 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
         map.add(walksLayer);
+
+        async function drawWalkLineForCurrentWalk() {
+            const walkId = getCurrentWalkId();
+            if (!walkId || !flowerLayer || !walksLayer || !window.__walkLineLayer) return;
+
+            try {
+                // Query flowers for this walk ordered by timestamp
+                const flowerQuery = flowerLayer.createQuery();
+                flowerQuery.where = `WalkID = ${walkId}`;
+                flowerQuery.returnGeometry = true;
+                flowerQuery.outFields = ["Timestamp"];
+                flowerQuery.orderByFields = ["Timestamp ASC"];
+                const flowerResult = await flowerLayer.queryFeatures(flowerQuery);
+
+                if (!flowerResult.features.length) {
+                    console.log("No flower points to draw line.");
+                    return;
+                }
+
+                // Query the walk start point geometry
+                const walkQuery = walksLayer.createQuery();
+                walkQuery.objectIds = [walkId];
+                walkQuery.returnGeometry = true;
+                const walkResult = await walksLayer.queryFeatures(walkQuery);
+
+                // ===== Add debug prints here =====
+                console.log("Walk start geometry:", walkResult.features[0].geometry);
+                console.log("Walk start spatialReference:", walkResult.features[0].geometry.spatialReference);
+
+                console.log("First flower geometry:", flowerResult.features[0].geometry);
+                console.log("First flower spatialReference:", flowerResult.features[0].geometry.spatialReference);
+
+                console.log("Walk start geometry coords:", {
+                    x: walkResult.features[0].geometry.x,
+                    y: walkResult.features[0].geometry.y,
+                    spatialReference: walkResult.features[0].geometry.spatialReference
+                });
+
+                console.log("First flower geometry coords:", {
+                    x: flowerResult.features[0].geometry.x,
+                    y: flowerResult.features[0].geometry.y,
+                    spatialReference: flowerResult.features[0].geometry.spatialReference
+                });
+
+                if (!walkResult.features.length) {
+                    console.log("No walk start location found.");
+                    return;
+                }
+
+                const startGeometry = walkResult.features[0].geometry;
+                const paths = [];
+
+                // Add start point coordinate
+                if (startGeometry && typeof startGeometry.x === "number" && typeof startGeometry.y === "number") {
+                    paths.push([startGeometry.x, startGeometry.y]);
+                }
+
+                // Add flower points
+                flowerResult.features.forEach(f => {
+                    const { x, y } = f.geometry;
+                    paths.push([x, y]);
+                });
+
+                if (paths.length < 2) {
+                    console.log("Not enough points to draw a line.");
+                    return;
+                }
+
+                // Create polyline geometry
+                const lineGeometry = {
+                    type: "polyline",
+                    paths: [paths],
+                    spatialReference: { wkid: 3857 }  // adjust if needed
+                };
+
+                // Line symbol styling
+                const lineSymbol = {
+                    type: "simple-line",
+                    color: [0, 128, 255, 0.9],
+                    width: 3
+                };
+
+                // Create and add graphic
+                const polylineGraphic = new Graphic({
+                    geometry: lineGeometry,
+                    symbol: lineSymbol
+                });
+
+                window.__walkLineLayer.removeAll();
+                window.__walkLineLayer.add(polylineGraphic);
+                console.log("Walk line drawn from start to flowers.");
+            } catch (err) {
+                console.error("Error drawing walk line:", err);
+            }
+        }
+
+        // Expose it globally if you want to call it from outside
+        window.drawWalkLineForCurrentWalk = drawWalkLineForCurrentWalk;
 
         notesEl = document.getElementById("walkNotes");
         saveNotesBtn = document.getElementById("saveWalkNotesBtn");
@@ -258,14 +392,20 @@ document.addEventListener("DOMContentLoaded", function () {
             await endWalk(walksLayer, walkNotes);
             flowerLayer.definitionExpression = "1=0"; // clear flowers
             walksLayer.definitionExpression = "1=0"; // clear walks
+
+            // Clear walk line
+            if (window.__walkLineLayer) {
+                window.__walkLineLayer.removeAll();
+            }
+
             updateWalkStatusBanner();
             updateWalkModal();
             closeWalkModal();
         };
 
         document.querySelector("#flowerModal .close").addEventListener("click", () => {
-  window.closeFlowerModal();
-});
+            window.closeFlowerModal();
+        });
 
         document.getElementById("submitFlowerBtn").addEventListener("click", (e) => {
             e.preventDefault();
@@ -290,13 +430,33 @@ document.addEventListener("DOMContentLoaded", function () {
         // Map click for flower location
         view.on("click", async (event) => {
             if (selectingLocation) {
-                window.selectedPoint = event.mapPoint; // use window.selectedPoint here
+                // Selecting flower location mode
+                window.selectedPoint = event.mapPoint;
                 selectingLocation = false;
                 view.container.style.cursor = "default";
+
                 document.getElementById("flowerModal").style.display = "block";
                 console.log("Selected flower location:", window.selectedPoint.longitude, window.selectedPoint.latitude);
-            } else {
-                window.selectedPoint = null;
+
+                // Close popup while selecting flower location
+                view.popup.close();
+                return;
+            }
+
+            try {
+                // Limit hitTest to flowerLayer only for performance and accuracy
+                const response = await view.hitTest(event, { include: flowerLayer });
+                if (response.results.length > 0) {
+                    const graphic = response.results[0].graphic;
+                    view.popup.open({
+                        location: event.mapPoint,
+                        features: [graphic]
+                    });
+                } else {
+                    view.popup.close();
+                }
+            } catch (error) {
+                console.error("Error during hitTest:", error);
             }
         });
 
@@ -306,6 +466,8 @@ document.addEventListener("DOMContentLoaded", function () {
         // Initialize banner on load
         updateWalkStatusBanner();
     });
+
+
 
     function updateWalkStatusBanner() {
         const banner = document.getElementById("walkStatusBanner");
@@ -521,6 +683,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (result.addFeatureResults[0].objectId) {
                 alert("Flower added successfully!");
                 closeFlowerModal();
+                await drawWalkLineForCurrentWalk();
             } else {
                 alert("Failed to add flower.");
             }

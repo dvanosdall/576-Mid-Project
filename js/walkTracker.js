@@ -6,76 +6,76 @@ let walkCoordinates = [];
 let watchId = null;
 
 export async function startWalk(walksLayer, location) {
-  // If location provided, use it, else fallback to geolocation
-  const getPoint = () => {
-    if (location) {
-      return Promise.resolve(location);
-    }
-    if (!navigator.geolocation) {
-      return Promise.reject(new Error("Geolocation not supported."));
-    }
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          resolve({
-            type: "point",
-            x: pos.coords.longitude,
-            y: pos.coords.latitude,
-            spatialReference: { wkid: 4326 }
-          });
-        },
-        (err) => reject(err)
-      );
-    });
-  };
-
-  try {
-    const pointGeometry = await getPoint();
-
-    const startTime = new Date();
-
-    const walkFeature = {
-      geometry: pointGeometry,
-      attributes: {
-        StartTime: startTime.toISOString(),
-        EndTime: null,
-        UserNotes: ""
-      }
+    // If location provided, use it, else fallback to geolocation
+    const getPoint = () => {
+        if (location) {
+            return Promise.resolve(location);
+        }
+        if (!navigator.geolocation) {
+            return Promise.reject(new Error("Geolocation not supported."));
+        }
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    resolve({
+                        type: "point",
+                        x: pos.coords.longitude,
+                        y: pos.coords.latitude,
+                        spatialReference: { wkid: 4326 }
+                    });
+                },
+                (err) => reject(err)
+            );
+        });
     };
 
-    const result = await walksLayer.applyEdits({ addFeatures: [walkFeature] });
-    console.log('StartWalk applyEdits result:', result);
+    try {
+        const pointGeometry = await getPoint();
 
-    const addedId = result.addFeatureResults[0].objectId;
-    currentWalkId = addedId;
+        const startTime = new Date();
 
-    if (addedId !== -1) {
-      const query = walksLayer.createQuery();
-      query.objectIds = [addedId];
-      const { features } = await walksLayer.queryFeatures(query);
+        const walkFeature = {
+            geometry: pointGeometry,
+            attributes: {
+                StartTime: startTime.toISOString(),
+                EndTime: null,
+                UserNotes: ""
+            }
+        };
 
-      if (features.length) {
-        console.log("Queried added walk feature:", features[0]);
-        const walkGeometry = features[0].geometry;
-        window.view.goTo(walkGeometry);
-      } else {
-        console.warn("No feature returned for added walk ID.");
-      }
-    } else {
-      console.error("Feature add failed: Invalid ObjectID (-1).");
-      throw new Error("Invalid ObjectID returned from addFeatures.");
+        const result = await walksLayer.applyEdits({ addFeatures: [walkFeature] });
+        console.log('StartWalk applyEdits result:', result);
+
+        const addedId = result.addFeatureResults[0].objectId;
+        currentWalkId = addedId;
+
+        if (addedId !== -1) {
+            const query = walksLayer.createQuery();
+            query.objectIds = [addedId];
+            const { features } = await walksLayer.queryFeatures(query);
+
+            if (features.length) {
+                console.log("Queried added walk feature:", features[0]);
+                const walkGeometry = features[0].geometry;
+                window.view.goTo(walkGeometry);
+            } else {
+                console.warn("No feature returned for added walk ID.");
+            }
+        } else {
+            console.error("Feature add failed: Invalid ObjectID (-1).");
+            throw new Error("Invalid ObjectID returned from addFeatures.");
+        }
+
+        isWalkActive = true;
+        walkStartTime = startTime;
+
+        updateWalkUI();
+        closeWalkModal();
+
+    } catch (err) {
+        alert("Failed to start walk: " + err.message);
+        throw err;
     }
-
-    isWalkActive = true;
-    walkStartTime = startTime;
-
-    updateWalkUI();
-    closeWalkModal();
-
-  } catch (err) {
-    alert("Failed to start walk: " + err.message);
-    throw err;
-  }
 }
 
 /**
