@@ -28,4 +28,6 @@ Midterm Project
 
 - **Look into a way to upload actual images instead of having to use URL's of a location you uploaded the image too, this is the first version and needs improved upon:**
 
+- **Eventually use local storage to toggle informational alerts/messages so they don't show every time once you get a hang of the application:**
+
 - **API Inegration with Plant Identification API's (PlantNet etc):**
