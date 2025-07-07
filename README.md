@@ -23,3 +23,9 @@ Midterm Project
 
 - **Custom Popups:**
   Click on flower points to see a clean, organized popup showing timestamp, photo, and notes formatted for clarity on all devices.
+
+## Future Work
+
+- **Look into a way to upload actual images instead of having to use URL's of a location you uploaded the image too, this is the first version and needs improved upon:**
+
+- **API Inegration with Plant Identification API's (PlantNet etc):**
