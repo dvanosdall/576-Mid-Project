@@ -30,6 +30,6 @@ Midterm Project
 
 - **Eventually use local storage to toggle informational alerts/messages so they don't show every time once you get a hang of the application:**
 
-- **Instead of exporting all walks (query against the database) and save as jpeg etc:**
+- **Instead of exporting all walks (query against the database), just export walks for the current user:**
 
 - **API Inegration with Plant Identification API's (PlantNet etc):**
